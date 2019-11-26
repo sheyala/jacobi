@@ -9,44 +9,60 @@
 
 import argparse
 
-parser = argparse.ArgumentParser()
-parser.add_argument('dim', type=int)
-parser.add_argument('iters', type=int)
+def setBoundaryConditions(grid, gridNew, dimension):
+    increment = 100.0 / (dimension + 1)
+    for i in range(1,dimension + 2):
+        grid[i][0] = i * increment
+        grid[dimension + 1][ dimension + 1 - i]= i * increment
+        gridNew[i][0] = i * increment
+        gridNew[dimension + 1][dimension + 1 - i]= i * increment
 
-# read input paramters
-args  = parser.parse_args()
-dim   = args.dim
-iters = args.iters
 
-print("m size = " + str(dim))
-print("number of iter = " + str(iters))
+def update(grid, gridNew, dimension):
+    for i in range(1,dimension + 1):
+        for j in range(1,dimension + 1):
+            gridNew[i][j] = 0.25 * (grid[i-1][j] + grid[i+1][j] + grid[i][j-1] + grid[i][j+1])
 
-# fill initial values
-m  = [[0 for x in range(dim + 2)] for y in range(dim + 2)] 
-m1 = [[0 for x in range(dim + 2)] for y in range(dim + 2)] 
 
-# set up boundary conditions
-# Note that the borders are never modified by the update, so we need to
-# set up b.c. on BOTH the buffers
-incr = 100.0 / (dim + 1)
-for i in range(1,dim + 2):
-    m[i][0] = i * incr 
-    m[dim + 1][ dim + 1 - i]= i * incr
-    m1[i][0] = i * incr
-    m1[dim + 1][dim + 1 - i]= i * incr
+def printOutput(grid, dimension):
 
-for it in range(iters):
-    for i in range(1,dim + 1):
-        for j in range(1,dim + 1):
-            m1[i][j] = 0.25 * (m[i-1][j] + m[i+1][j] + m[i][j-1] + m[i][j+1])
-    #we use list to force a deep copy, otherwise for lists only the reference is copied        
-    m = list(m1)
+    outputFile = open("solution.dat","w+")
 
-f = open("solution.dat","w+")
+    for i in range(dimension+2):
+        for j in range(dimension+2):
+            outputFile.write(str(grid[i][j]) + " ")
+        outputFile.write("\n")
 
-for i in range(dim + 2):
-    for j in range(dim + 2):
-        f.write(str(m[i][j]) + " ")
-    f.write("\n")
+    outputFile.close()
 
-f.close()
+def main():
+    parser = argparse.ArgumentParser()
+    parser.add_argument('dimension', type=int)
+    parser.add_argument('iterations', type=int)
+
+    # read input paramters
+    args  = parser.parse_args()
+    dimension   = args.dimension
+    iterations = args.iterations
+
+    print("m size = " + str(dimension))
+    print("number of iter = " + str(iterations))
+
+    # fill initial values
+    grid  = [[0 for x in range(dimension + 2)] for y in range(dimension + 2)] 
+    gridNew = [[0 for x in range(dimension + 2)] for y in range(dimension + 2)] 
+
+    # set up boundary conditions
+    # Note that the borders are never modified by the update, so we need to
+    # set up b.c. on BOTH the buffers
+    setBoundaryConditions(grid, gridNew, dimension)
+
+    for it in range(iterations):
+        update(grid, gridNew, dimension)
+        #we use list to force a deep copy, otherwise for lists only the reference is copied        
+        grid = list(gridNew)
+
+    printOutput(grid, dimension)
+
+if __name__ == "__main__":
+    main()
